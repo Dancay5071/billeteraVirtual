@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from "react";
 import { 
   TextField, 
   Button, 
@@ -6,29 +6,47 @@ import {
   Typography, 
   Paper, 
   InputAdornment, 
-  IconButton 
-} from '@mui/material'
-import { Visibility, VisibilityOff } from '@mui/icons-material'
+  IconButton,
+  useTheme,
+  useMediaQuery
+} from '@mui/material';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
+import { login, getUsuario } from '../servicios/authService';
 
-const LoginForm = ({ onLogin }) => {
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState('')
+const LoginForm = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
+  const [usuarios, setUsuarios] = useState([]);
+  
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const pruebaUsuario = {
-    email: 'usuario@prueba.com',
-    password: '1234'
-  };
+  useEffect(() => {
+    const loadUsuario = async () => {
+      const result = await getUsuario();
+      if (result.success) {
+        setUsuarios(result.data);
+      }
+    };
+    loadUsuario();
+  }, []);
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    if (!username || !password) {
-      setError('Por favor ingrese usuario y contraseña')
-      return
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    
+    try {
+      const result = await login(email, password);
+      if (result.success) {
+        console.log('Usuario autenticado:', result.data.user);
+        // Redirigir o manejar el login exitoso
+      }
+    } catch (err) {
+      setError(err.error || 'Error al iniciar sesión');
     }
-    onLogin(username, password)
-  }
+  };
 
   return (
     <Box
@@ -37,37 +55,55 @@ const LoginForm = ({ onLogin }) => {
         justifyContent: 'center',
         alignItems: 'center',
         minHeight: '100vh',
-        p: 2,
+        p: isMobile ? 1 : 3,
         backgroundColor: '#f5f5f5'
       }}
     >
       <Paper
-        elevation={3}
+        elevation={isMobile ? 1 : 3}
         sx={{
-          p: 4,
-          maxWidth: 450,
+          p: isMobile ? 2 : 4,
           width: '100%',
-          borderRadius: 2
+          maxWidth: isMobile ? '90%' : '450px',
+          borderRadius: 2,
+          boxSizing: 'border-box'
         }}
       >
-        <Typography variant="h4" component="h1" gutterBottom align="center" sx={{ mb: 4 }}>
-         Billetera virtual
+        <Typography 
+          variant={isMobile ? "h5" : "h4"} 
+          component="h1" 
+          gutterBottom 
+          align="center" 
+          sx={{ 
+            mb: 4,
+            fontSize: isMobile ? '1.5rem' : '2.125rem'
+          }}
+        >
+          Billetera virtual
         </Typography>
         
         {error && (
-          <Typography color="error" align="center" sx={{ mb: 2 }}>
+          <Typography 
+            color="error" 
+            align="center" 
+            sx={{ 
+              mb: 2,
+              fontSize: isMobile ? '0.875rem' : '1rem'
+            }}
+          >
             {error}
           </Typography>
         )}
 
         <Box component="form" onSubmit={handleSubmit}>
           <TextField
-            label="Usuario"
+            label="Email"
             variant="outlined"
             fullWidth
             margin="normal"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            size={isMobile ? "small" : "medium"}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             sx={{ mb: 2 }}
           />
           
@@ -76,6 +112,7 @@ const LoginForm = ({ onLogin }) => {
             variant="outlined"
             fullWidth
             margin="normal"
+            size={isMobile ? "small" : "medium"}
             type={showPassword ? 'text' : 'password'}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -85,8 +122,9 @@ const LoginForm = ({ onLogin }) => {
                   <IconButton
                     onClick={() => setShowPassword(!showPassword)}
                     edge="end"
+                    size={isMobile ? "small" : "medium"}
                   >
-                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                    {showPassword ? <VisibilityOff fontSize={isMobile ? "small" : "medium"} /> : <Visibility fontSize={isMobile ? "small" : "medium"} />}
                   </IconButton>
                 </InputAdornment>
               )
@@ -98,15 +136,18 @@ const LoginForm = ({ onLogin }) => {
             type="submit"
             variant="contained"
             fullWidth
-            size="large"
-            sx={{ py: 1.5 }}
+            size={isMobile ? "medium" : "large"}
+            sx={{ 
+              py: isMobile ? 1 : 1.5,
+              fontSize: isMobile ? '0.875rem' : '1rem'
+            }}
           >
             Iniciar Sesión
           </Button>
         </Box>
       </Paper>
     </Box>
-  )
-}
+  );
+};
 
-export default LoginForm
+export default LoginForm;
